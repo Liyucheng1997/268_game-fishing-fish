@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>悠然垂钓 · 钓鱼养鱼小游戏</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- 顶栏 -->
+    <header id="topbar">
+      <div class="brand">🎣 悠然垂钓</div>
+      <select id="loc-select" title="选择钓点"></select>
+      <div class="spacer"></div>
+      <div class="env" id="env-display">☀️ 08:00</div>
+      <div class="coins">💰 <span id="coin-display">0</span></div>
+      <button id="btn-sound" class="icon-btn" title="音效开关">🔊</button>
+    </header>
+
+    <!-- 页签 -->
+    <nav id="tabs">
+      <button class="tab-btn active" data-tab="fishing">🎣 钓鱼</button>
+      <button class="tab-btn" data-tab="tank">🐠 鱼缸</button>
+      <button class="tab-btn" data-tab="shop">🛒 商店</button>
+      <button class="tab-btn" data-tab="book">📖 图鉴</button>
+    </nav>
+
+    <!-- 钓鱼页 -->
+    <main id="page-fishing" class="tab-page active">
+      <div class="canvas-wrap">
+        <canvas id="fishing-canvas"></canvas>
+      </div>
+      <div id="fishing-bottom">
+        <div id="bait-bar"></div>
+        <div id="gear-display"></div>
+      </div>
+    </main>
+
+    <!-- 鱼缸页 -->
+    <main id="page-tank" class="tab-page">
+      <div class="tank-toolbar">
+        <span>容量 <b id="tank-cap">0/6</b></span>
+        <span>产出 <b id="tank-rate">—</b></span>
+        <button class="btn small primary" id="btn-collect-income">💰 收取 0</button>
+        <span class="dim-hint">点击鱼可查看 / 卖出</span>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="tank-canvas"></canvas>
+      </div>
+    </main>
+
+    <!-- 商店页 -->
+    <main id="page-shop" class="tab-page scrollable">
+      <div id="shop-list"></div>
+    </main>
+
+    <!-- 图鉴页 -->
+    <main id="page-book" class="tab-page scrollable">
+      <div class="book-header">收集进度 <b id="book-progress">0/0</b></div>
+      <div id="book-grid"></div>
+      <div id="book-stats"></div>
+    </main>
+  </div>
+
+  <!-- 捕获结算弹窗 -->
+  <div id="catch-modal" class="modal-mask hidden">
+    <div class="modal" id="catch-content"></div>
+  </div>
+
+  <!-- 鱼信息弹窗 -->
+  <div id="info-modal" class="modal-mask hidden">
+    <div class="modal" id="info-content"></div>
+  </div>
+
+  <div id="toast-box"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/fishdraw.js"></script>
+  <script src="js/fishing.js"></script>
+  <script src="js/aquarium.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
