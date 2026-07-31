@@ -143,6 +143,22 @@ function drawFish(ctx, v, len, t = 0, silhouette = false) {
     ctx.stroke();
   }
 
+  // 身体高光（体积感）
+  if (!silhouette) {
+    ctx.save();
+    ctx.globalAlpha = 0.2;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.ellipse(-rx * 0.02, -ry * 0.45, rx * 0.55, ry * 0.26, -0.12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.14;
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.ellipse(0, ry * 0.55, rx * 0.8, ry * 0.32, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
   // 眼睛
   if (!silhouette) {
     ctx.fillStyle = '#fff';

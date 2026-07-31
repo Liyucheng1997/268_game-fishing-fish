@@ -28,8 +28,9 @@
 
     <!-- 钓鱼页 -->
     <main id="page-fishing" class="tab-page active">
-      <div class="canvas-wrap">
-        <canvas id="fishing-canvas"></canvas>
+      <div class="canvas-wrap" id="fishing-wrap">
+        <canvas id="gl-canvas"></canvas>
+        <canvas id="hud-canvas"></canvas>
       </div>
       <div id="fishing-bottom">
         <div id="bait-bar"></div>
@@ -75,10 +76,12 @@
 
   <div id="toast-box"></div>
 
+  <script src="js/three.min.js"></script>
   <script src="js/data.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/state.js"></script>
   <script src="js/fishdraw.js"></script>
+  <script src="js/scene3d.js"></script>
   <script src="js/fishing.js"></script>
   <script src="js/aquarium.js"></script>
   <script src="js/ui.js"></script>

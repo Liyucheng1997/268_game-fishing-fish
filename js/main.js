@@ -4,7 +4,11 @@
 (function () {
   loadGame();
 
-  Fishing.init(document.getElementById('fishing-canvas'));
+  Fishing.init(
+    document.getElementById('fishing-wrap'),
+    document.getElementById('gl-canvas'),
+    document.getElementById('hud-canvas')
+  );
   Aquarium.init(document.getElementById('tank-canvas'));
   UI.init();
 
@@ -18,6 +22,25 @@
     });
   }
   if (params.get('tab')) UI.switchTab(params.get('tab'));
+  // 截图/调试用姿态
+  const pose = params.get('pose');
+  if (pose === 'waiting') {
+    Fishing.castDist = 45; Fishing.castYaw = 0.1;
+    Fishing.startWaiting();
+    Fishing.biteAt = 999; Fishing.nibbles = [];
+  } else if (pose === 'fight') {
+    Fishing.castDist = 45; Fishing.castYaw = 0;
+    Fishing.state = 'bite';
+    const sp = fishById(params.get('fish') || 'blackcarp');
+    Fishing.pickCatch = () => ({ sp });
+    Fishing.hookFish();
+    Fishing.fish.az = 0.25;
+    Fishing.tension = 72;
+  } else if (pose === 'charging') {
+    Fishing.state = 'charging'; Fishing.power = 65;
+  }
+  if (params.get('hour')) State.gameHour = parseFloat(params.get('hour'));
+  if (params.get('wx')) State.weather = params.get('wx');
 
   window.addEventListener('resize', () => {
     Fishing.resize();
@@ -52,7 +75,7 @@
 
     if (UI.tab === 'fishing') {
       Fishing.update(dt);
-      Fishing.render(t);
+      Fishing.render(t, dt);
     } else if (UI.tab === 'tank') {
       Aquarium.update(dt);
       Aquarium.render(t);

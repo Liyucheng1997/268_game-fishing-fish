@@ -64,8 +64,11 @@ html, body {
 .tab-page.active { display: flex; }
 .tab-page.scrollable { overflow-y: auto; padding: 14px; }
 
-.canvas-wrap { flex: 1; min-height: 0; position: relative; }
+.canvas-wrap { flex: 1; min-height: 0; position: relative; overflow: hidden; }
 .canvas-wrap canvas { display: block; touch-action: none; user-select: none; }
+#fishing-wrap canvas { position: absolute; inset: 0; }
+#hud-canvas { pointer-events: none; }
+#fishing-wrap { cursor: crosshair; }
 
 /* ---------- 钓鱼底栏 ---------- */
 #fishing-bottom {

@@ -156,6 +156,21 @@ const Aquarium = {
       ctx.stroke();
     });
 
+    // 沙底焦散光斑
+    ctx.save();
+    ctx.globalAlpha = 0.1;
+    ctx.strokeStyle = '#e8f8ff';
+    ctx.lineWidth = 2.5;
+    for (let i = 0; i < 9; i++) {
+      const cx = ((i * 137 + t * 14) % (W + 80)) - 40;
+      const cy = H - 30 + Math.sin(i * 2.4) * 5;
+      const rr = 14 + Math.sin(t * 1.3 + i) * 5;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rr, rr * 0.35, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+
     // 玻璃反光
     ctx.save();
     ctx.globalAlpha = 0.08;
@@ -163,6 +178,15 @@ const Aquarium = {
     ctx.beginPath();
     ctx.moveTo(W * 0.03, 0); ctx.lineTo(W * 0.13, 0); ctx.lineTo(W * 0.05, H); ctx.lineTo(W * 0.0, H * 0.7);
     ctx.closePath(); ctx.fill();
+    ctx.restore();
+
+    // 暗角
+    ctx.save();
+    const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.45, W / 2, H / 2, Math.max(W, H) * 0.75);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, 'rgba(0,10,20,0.35)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, W, H);
     ctx.restore();
 
     // 空缸提示
