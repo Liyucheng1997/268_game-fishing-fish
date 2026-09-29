@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>fishlab</title>
+<style>html,body{margin:0;height:100%;background:#233;overflow:hidden}canvas{display:block}</style></head>
+<body>
+<script src="../js/three.min.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/util3d.js"></script>
+<script src="../js/fishmodel.js"></script>
+<script>
+const r = new THREE.WebGLRenderer({ antialias: true });
+r.setSize(innerWidth, innerHeight); r.outputEncoding = THREE.sRGBEncoding;
+r.toneMapping = THREE.ACESFilmicToneMapping;
+document.body.appendChild(r.domElement);
+const sc = new THREE.Scene(); sc.background = new THREE.Color(0x345060);
+sc.add(new THREE.HemisphereLight(0xdfefff, 0x405040, 0.8));
+const d = new THREE.DirectionalLight(0xffffff, 1.5); d.position.set(-3, 5, 4); sc.add(d);
+const pm = new THREE.PMREMGenerator(r);
+const es = new THREE.Scene(); es.background = new THREE.Color(0x88aacc);
+es.add(new THREE.Mesh(new THREE.SphereGeometry(5,16,8), new THREE.MeshBasicMaterial({color:0xffffff, side:THREE.BackSide})));
+sc.environment = pm.fromScene(es, 0.04).texture;
+const cam = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.1, 100);
+const params = new URLSearchParams(location.search);
+const only = params.get('id');
+const list = only ? [fishById(only)] : FISH_DB;
+const cols = only ? 1 : 6;
+const fish = list.map((sp, i) => {
+  const f = FishModel.create(sp);
+  f.group.position.set(((i % cols) - (cols - 1) / 2) * 1.25, only ? 0 : -Math.floor(i / cols) * 0.75 + 1.1, 0);
+  f.group.rotation.y = -Math.PI / 2;
+  sc.add(f.group);
+  return f;
+});
+const ang = parseFloat(params.get('a') || '0.35');
+cam.position.set(Math.sin(ang) * (only ? 2.2 : 7.2), 0.6, Math.cos(ang) * (only ? 2.2 : 7.2));
+cam.lookAt(0, only ? 0 : 0, 0);
+let t0 = performance.now();
+function loop(now) {
+  const dt = (now - t0) / 1000; t0 = now;
+  fish.forEach(f => f.tick(dt, params.get('still') ? 0 : 0.6, 0));
+  r.render(sc, cam);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+if (params.get('snap')) {
+  document.body.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:6px;background:#1e293b;padding:6px">' +
+    FISH_DB.map(sp => `<img src="${FishModel.snapshot(sp, 180, 90)}" style="width:180px;height:90px;background:#0f172a;border-radius:6px">`).join('') + '</div>';
+}
+</script>
+</body></html>

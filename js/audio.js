@@ -45,9 +45,50 @@ const Sound = (() => {
     src.start(t0);
   }
 
+  // 环境声：水声/风声（滤波噪声循环）+ 随机鸟鸣/蟋蟀
+  let amb = null;
+  function startAmbient() {
+    if (amb || !enabled) return;
+    const c = ac();
+    const len = c.sampleRate * 4;
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const d = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
+    const src = c.createBufferSource(); src.buffer = buf; src.loop = true;
+    const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 700;
+    const g = c.createGain(); g.gain.value = 0;
+    src.connect(f).connect(g).connect(c.destination);
+    src.start();
+    amb = { g, f, t: 0 };
+  }
+  function chirp(night) {
+    if (!enabled) return;
+    if (night) { for (let i = 0; i < 3; i++) tone(4200 + Math.random() * 300, 0.04, 'sine', 0.012, null, i * 0.07); }
+    else {
+      const base = 2200 + Math.random() * 1600;
+      const n = 2 + Math.floor(Math.random() * 4);
+      for (let i = 0; i < n; i++) tone(base * (1 + Math.random() * 0.2), 0.07, 'sine', 0.018, base * 1.3, i * 0.11);
+    }
+  }
+
   return {
-    unlock() { try { ac(); } catch (e) { enabled = false; } },
-    toggle() { enabled = !enabled; return enabled; },
+    unlock() { try { ac(); startAmbient(); } catch (e) { enabled = false; } },
+    toggle() { enabled = !enabled; if (amb) amb.g.gain.value = 0; return enabled; },
+    // 每帧：按场景调整环境音
+    ambient(dt, active, rain, night, loc) {
+      if (!amb) return;
+      const target = enabled && active ? (rain ? 0.09 : loc === 'sea' ? 0.07 : 0.035) : 0;
+      amb.g.gain.value += (target - amb.g.gain.value) * Math.min(1, dt * 2);
+      amb.f.frequency.value = rain ? 2400 : loc === 'sea' ? 900 : 600;
+      amb.t -= dt;
+      if (active && enabled && amb.t <= 0 && !rain) {
+        amb.t = night ? 0.8 + Math.random() * 2 : 3 + Math.random() * 7;
+        if (loc !== 'sea' || night) chirp(night);
+      }
+    },
+    drag()    { noise(0.05, 0.05, 5000); tone(2600 + Math.random() * 400, 0.03, 'square', 0.02); },
+    jump()    { noise(0.5, 0.3, 1200); tone(200, 0.3, 'sine', 0.08, 90); },
     get enabled() { return enabled; },
     click()   { tone(600, 0.06, 'square', 0.06); },
     cast()    { noise(0.35, 0.12, 3000); tone(300, 0.3, 'sine', 0.05, 900); },

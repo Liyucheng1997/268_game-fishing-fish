@@ -23,6 +23,7 @@ const State = {
   weather: 'sunny',
   weatherTimer: 90,
   uidSeq: 1,
+  drag: 6,                  // 渔轮卸力档位 1~10
 };
 
 function saveGame() {

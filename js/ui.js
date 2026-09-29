@@ -15,8 +15,7 @@ const UI = {
     });
     document.getElementById('loc-select').addEventListener('change', (e) => {
       State.location = e.target.value;
-      Fishing.state = 'idle';
-      Fishing.fish = null;
+      Fishing.setLocation(State.location);
       saveGame();
       this.toast(`来到了 ${LOCATIONS[State.location].name}`);
     });
@@ -92,6 +91,8 @@ const UI = {
     const mask = document.getElementById('catch-modal');
     const box = document.getElementById('catch-content');
     mask.classList.remove('hidden');
+    mask.classList.add('showcase');
+    const close = (mode) => { mask.classList.add('hidden'); mask.classList.remove('showcase'); Fishing.finishCatch(mode); };
 
     if (f.junk) {
       const j = f.junk;
@@ -110,7 +111,7 @@ const UI = {
         ${extra}
         <div class="catch-actions"><button class="btn primary" id="btn-junk-ok">${j.treasure ? '太棒了' : '扔回去'}</button></div>`;
       document.getElementById('btn-junk-ok').addEventListener('click', () => {
-        Sound.click(); mask.classList.add('hidden'); Fishing.finishCatch(); saveGame();
+        Sound.click(); close('release'); saveGame();
       });
       return;
     }
@@ -121,46 +122,41 @@ const UI = {
     const isNew = State.collection[sp.id].count === 1;
     const isBest = State.collection[sp.id].bestW === f.weight && State.collection[sp.id].count > 1;
     const full = State.tank.length >= tankCap();
+    const lenCm = Math.round(fishLength(sp, f.weight) * 100);
     box.innerHTML = `
       <div class="catch-title">🎉 钓到了！${isNew ? '<span class="new-badge">✨ 新图鉴</span>' : ''}${isBest ? '<span class="new-badge best">📏 新纪录</span>' : ''}</div>
-      <canvas id="catch-fish-cv" width="260" height="130"></canvas>
       <div class="catch-name" style="color:${r.color}">${sp.name} <span class="rarity-chip" style="background:${r.color}">${r.name}</span></div>
-      <div class="catch-meta">重量 <b>${f.weight} kg</b> · 价值 <b>💰 ${price}</b></div>
+      <div class="catch-stats">
+        <div><span>重量</span><b>${f.weight} kg</b></div>
+        <div><span>体长</span><b>${lenCm} cm</b></div>
+        <div><span>价值</span><b>💰 ${price}</b></div>
+      </div>
       <div class="catch-actions">
         <button class="btn primary" id="btn-keep" ${full ? 'disabled' : ''}>${full ? '鱼缸已满' : '🐠 放入鱼缸'}</button>
         <button class="btn" id="btn-sell">💰 卖出 ${price}</button>
+        <button class="btn ghost" id="btn-release">🌊 放生</button>
       </div>`;
-    // 画鱼
-    const cv = document.getElementById('catch-fish-cv');
-    const cctx = cv.getContext('2d');
-    let raf;
-    const drawLoop = () => {
-      if (mask.classList.contains('hidden')) { cancelAnimationFrame(raf); return; }
-      cctx.clearRect(0, 0, 260, 130);
-      cctx.save();
-      cctx.translate(130, 65);
-      drawFish(cctx, sp.v, 96, performance.now() / 1000);
-      cctx.restore();
-      raf = requestAnimationFrame(drawLoop);
-    };
-    drawLoop();
 
     document.getElementById('btn-keep').addEventListener('click', () => {
       if (State.tank.length >= tankCap()) return;
       Sound.buy();
       State.tank.push({ uid: State.uidSeq++, spId: sp.id, weight: f.weight, caughtAt: Date.now() });
       this.refreshTankInfo();
-      mask.classList.add('hidden');
-      Fishing.finishCatch();
+      close('keep');
       this.toast(`${sp.name} 已放入鱼缸`);
       saveGame();
     });
     document.getElementById('btn-sell').addEventListener('click', () => {
       Sound.coin();
       addCoins(price);
-      mask.classList.add('hidden');
-      Fishing.finishCatch();
+      close('sell');
       this.toast(`卖出 ${sp.name}，+${price} 金币`);
+      saveGame();
+    });
+    document.getElementById('btn-release').addEventListener('click', () => {
+      Sound.splash();
+      close('release');
+      this.toast(`${sp.name} 游回了水里`);
       saveGame();
     });
   },
@@ -196,7 +192,7 @@ const UI = {
     mask.classList.remove('hidden');
     const days = Math.floor((Date.now() - tf.caughtAt) / 86400000);
     box.innerHTML = `
-      <canvas id="info-fish-cv" width="240" height="120"></canvas>
+      <img class="fish-img" src="${FishModel.snapshot(sp, 280, 140)}" alt="">
       <div class="catch-name" style="color:${r.color}">${sp.name} <span class="rarity-chip" style="background:${r.color}">${r.name}</span></div>
       <div class="catch-meta">重量 ${tf.weight} kg · 产出 ${r.income} 金币/分钟</div>
       <div class="catch-meta dim">${days > 0 ? `已饲养 ${days} 天` : '今天刚入缸'}</div>
@@ -205,18 +201,6 @@ const UI = {
         <button class="btn" id="btn-info-free">🌊 放生</button>
         <button class="btn primary" id="btn-info-close">关闭</button>
       </div>`;
-    const cv = document.getElementById('info-fish-cv');
-    const cctx = cv.getContext('2d');
-    let raf;
-    const loop = () => {
-      if (mask.classList.contains('hidden')) { cancelAnimationFrame(raf); return; }
-      cctx.clearRect(0, 0, 240, 120);
-      cctx.save(); cctx.translate(120, 60);
-      drawFish(cctx, sp.v, 86, performance.now() / 1000);
-      cctx.restore();
-      raf = requestAnimationFrame(loop);
-    };
-    loop();
     const remove = () => {
       State.tank = State.tank.filter(x => x.uid !== tf.uid);
       Aquarium.syncFish();
@@ -381,13 +365,10 @@ const UI = {
         const card = document.createElement('div');
         card.className = 'book-card' + (rec ? '' : ' unknown');
         card.style.borderColor = rec ? r.color : '#334155';
-        const cv = document.createElement('canvas');
-        cv.width = 120; cv.height = 60;
-        const cctx = cv.getContext('2d');
-        cctx.save(); cctx.translate(60, 30);
-        drawFish(cctx, sp.v, 52, 0, !rec);
-        cctx.restore();
-        card.appendChild(cv);
+        const img = document.createElement('img');
+        img.className = 'fish-img';
+        img.src = FishModel.snapshot(sp, 160, 80, !rec);
+        card.appendChild(img);
         const info = document.createElement('div');
         info.className = 'bc-info';
         info.innerHTML = rec
